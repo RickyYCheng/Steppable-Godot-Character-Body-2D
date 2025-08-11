@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3 uid="uid://cdnba30y3aihf"]
+
+[ext_resource type="PackedScene" uid="uid://eplr8oh5gnd4" path="res://char_body_2d.tscn" id="1_ulcgi"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_drvgu"]
+size = Vector2(384, 20)
+
+[sub_resource type="Gradient" id="Gradient_drvgu"]
+offsets = PackedFloat32Array(1)
+colors = PackedColorArray(1, 0.404336, 0.394753, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ulcgi"]
+gradient = SubResource("Gradient_drvgu")
+width = 384
+height = 20
+
+[node name="Node2D" type="Node2D"]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(192, 206)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+shape = SubResource("RectangleShape2D_drvgu")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D"]
+texture = SubResource("GradientTexture2D_ulcgi")
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+position = Vector2(192, 206)
+rotation = -0.431096
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+shape = SubResource("RectangleShape2D_drvgu")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D2"]
+texture = SubResource("GradientTexture2D_ulcgi")
+
+[node name="CharBody2D" parent="." instance=ExtResource("1_ulcgi")]
+position = Vector2(10, 196)
