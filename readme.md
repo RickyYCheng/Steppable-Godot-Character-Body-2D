@@ -1,4 +1,4 @@
-# Steppabe Godot Character Body 2D
+# Steppable Godot Character Body 2D
 
 ```gdscript
 extends CharBody2D
