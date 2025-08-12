@@ -375,8 +375,11 @@ public partial class CharBody2D : StaticBody2D
         return colliding;
     }
 
-    public bool MoveAndSlide(double delta)
+    public bool MoveAndSlide(double delta = -1)
     {
+        if (delta < 0)
+            delta = Engine.IsInPhysicsFrame() ? GetPhysicsProcessDeltaTime() : GetProcessDeltaTime();
+
         Vector2 current_platform_velocity = platform_velocity;
         Transform2D gt = GetGlobalTransform();
         previous_position = gt.Origin;
