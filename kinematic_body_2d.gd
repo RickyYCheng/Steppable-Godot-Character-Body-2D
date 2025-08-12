@@ -21,7 +21,7 @@ func _motion_result_cons() -> Array:
 		]
 
 func _motion_result_get_angle(motion_result: Array, direction: Vector2) -> float:
-	return motion_result[MOTION_RESULT_COLLISION_NORMAL].dot(direction)
+	return acos(motion_result[MOTION_RESULT_COLLISION_NORMAL].dot(direction))
 
 enum {
 	MOTION_RESULT_TRAVEL,                  # Vector2
@@ -237,12 +237,12 @@ func _set_platform_data(p_result: Array) -> void:
 	_platform_layer = PhysicsServer2D.body_get_collision_layer(_platform_rid)
 
 func _set_collision_direction(p_result: Array) -> void:
-	if motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	if motion_mode == MOTION_MODE_GROUNDED and _motion_result_get_angle(p_result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# floor
 		_on_floor = true
 		_floor_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		_set_platform_data(p_result)
-	elif motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, -up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	elif motion_mode == MOTION_MODE_GROUNDED and _motion_result_get_angle(p_result, -up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# ceiling
 		_on_ceiling = true
 	else:

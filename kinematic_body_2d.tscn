@@ -16,6 +16,7 @@ height = 40
 
 [node name="KinematicBody2D" type="StaticBody2D"]
 script = ExtResource("1_qy8hq")
+metadata/_custom_type_script = "uid://dg88c4n1m3h2f"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -20)
