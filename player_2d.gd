@@ -26,8 +26,6 @@ func _physics_process(delta: float) -> void:
 	
 	move_and_slide()
 	
-	prints(is_on_floor(), is_on_wall(), instance_from_id(_platform_object_id))
-	
 	# default = -1. 
 	# will use process_delta by default where delta < 0
 	# move_and_slide()
