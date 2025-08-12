@@ -3,25 +3,8 @@ extends StaticBody2D
 
 const CMP_EPSILON := 0.00001
 
-class MotionResult:
-	enum {
-		TRAVEL,                  # Vector2
-		REMAINDER,               # Vector2
-		COLLISION_SAFE_FRACTION, # float
-		COLLISION_UNSAFE_FRACTION, # float
-		COLLIDER_SHAPE,          # int
-		COLLISION_LOCAL_SHAPE,    # int
-		COLLIDER,                # Object
-		COLLIDER_ID,             # int
-		COLLIDER_RID,            # RID
-		COLLIDER_VELOCITY,       # Vector2
-		COLLISION_DEPTH,         # float
-		COLLISION_NORMAL,        # Vector2
-		COLLISION_POINT,         # Vector2
-	}
-	
-	static func cons() -> Array:
-		return [
+func _motion_result_cons() -> Array:
+	return [
 			Vector2.ZERO,  # TRAVEL
 			Vector2.ZERO,  # REMAINDER
 			0.0,           # COLLISION_SAFE_FRACTION
@@ -36,9 +19,57 @@ class MotionResult:
 			Vector2.ZERO,  # COLLISION_NORMAL
 			Vector2.ZERO,  # COLLISION_POINT
 		]
-	
-	static func get_angle(motion_result: Array, direction: Vector2) -> float:
-		return motion_result[COLLISION_NORMAL].dot(direction)
+
+func _motion_result_get_angle(motion_result: Array, direction: Vector2) -> float:
+	return motion_result[MOTION_RESULT_COLLISION_NORMAL].dot(direction)
+
+enum {
+	MOTION_RESULT_TRAVEL,                  # Vector2
+	MOTION_RESULT_REMAINDER,               # Vector2
+	MOTION_RESULT_COLLISION_SAFE_FRACTION, # float
+	MOTION_RESULT_COLLISION_UNSAFE_FRACTION, # float
+	MOTION_RESULT_COLLIDER_SHAPE,          # int
+	MOTION_RESULT_COLLISION_LOCAL_SHAPE,    # int
+	MOTION_RESULT_COLLIDER,                # Object
+	MOTION_RESULT_COLLIDER_ID,             # int
+	MOTION_RESULT_COLLIDER_RID,            # RID
+	MOTION_RESULT_COLLIDER_VELOCITY,       # Vector2
+	MOTION_RESULT_COLLISION_DEPTH,         # float
+	MOTION_RESULT_COLLISION_NORMAL,        # Vector2
+	MOTION_RESULT_COLLISION_POINT,         # Vector2
+}
+
+func _serialize_motion_results(results: Array) -> Array:
+	var serialized = []
+	for result in results:
+		# 创建结果的副本
+		var copy = result.duplicate()
+		
+		# 将节点引用替换为节点路径
+		var collider = copy[MOTION_RESULT_COLLIDER]
+		if collider is Node and collider != null:
+			copy[MOTION_RESULT_COLLIDER] = collider.get_path()
+		else:
+			copy[MOTION_RESULT_COLLIDER] = NodePath()
+		
+		serialized.append(copy)
+	return serialized
+
+func _deserialize_motion_results(serialized: Array) -> Array:
+	var deserialized = []
+	for result in serialized:
+		# 创建结果的副本
+		var copy = result.duplicate()
+		
+		# 将节点路径转换回节点引用
+		var collider_path = copy[MOTION_RESULT_COLLIDER]
+		if collider_path is NodePath and collider_path != NodePath():
+			copy[MOTION_RESULT_COLLIDER] = get_node_or_null(collider_path)
+		else:
+			copy[MOTION_RESULT_COLLIDER] = null
+		
+		deserialized.append(copy)
+	return deserialized
 
 enum {
 	MOTION_MODE_GROUNDED,
@@ -60,8 +91,8 @@ enum {
 	PHYSICS_STATE_LAST_MOTION,
 	PHYSICS_STATE_PREVIOUS_POSITION,
 	PHYSICS_STATE_REAL_VELOCITY,
-	PHYSICS_STATE_PLATFORM_RID,
-	PHYSICS_STATE_PLATFORM_OBJECT_ID,
+	#PHYSICS_STATE_PLATFORM_RID,
+	#PHYSICS_STATE_PLATFORM_OBJECT_ID,
 	PHYSICS_STATE_ON_FLOOR,
 	PHYSICS_STATE_ON_CEILING,
 	PHYSICS_STATE_ON_WALL,
@@ -80,12 +111,12 @@ var physics_states : Array:
 			_last_motion,
 			_previous_position,
 			_real_velocity,
-			_platform_rid,
-			_platform_object_id,
+			#_platform_rid,
+			#_platform_object_id,
 			_on_floor,
 			_on_ceiling,
 			_on_wall,
-			_motion_results,
+			_serialize_motion_results(_motion_results),
 		]
 	set(remote_state):
 		if remote_state.size() != physics_states.size():
@@ -100,12 +131,12 @@ var physics_states : Array:
 		_last_motion = remote_state[PHYSICS_STATE_LAST_MOTION]
 		_previous_position = remote_state[PHYSICS_STATE_PREVIOUS_POSITION]
 		_real_velocity = remote_state[PHYSICS_STATE_REAL_VELOCITY]
-		_platform_rid = remote_state[PHYSICS_STATE_PLATFORM_RID]
-		_platform_object_id = remote_state[PHYSICS_STATE_PLATFORM_OBJECT_ID]
+		#_platform_rid = remote_state[PHYSICS_STATE_PLATFORM_RID]
+		#_platform_object_id = remote_state[PHYSICS_STATE_PLATFORM_OBJECT_ID]
 		_on_floor = remote_state[PHYSICS_STATE_ON_FLOOR]
 		_on_ceiling = remote_state[PHYSICS_STATE_ON_CEILING]
 		_on_wall = remote_state[PHYSICS_STATE_ON_WALL]
-		_motion_results = remote_state[PHYSICS_STATE_MOTION_RESULTS]
+		_motion_results = _deserialize_motion_results(remote_state[PHYSICS_STATE_MOTION_RESULTS])
 
 @export_enum("Grounded", "Floating") var motion_mode : int = MOTION_MODE_GROUNDED
 @export var up_direction := Vector2.UP:
@@ -149,7 +180,7 @@ var _on_floor := false;
 var _on_ceiling := false;
 var _on_wall := false;
 
-var _motion_results : Array[Array] = []
+var _motion_results : Array = []
 
 const FLOOR_ANGLE_THRESHOLD := 0.01
 
@@ -196,29 +227,29 @@ func get_slide_collision(p_bounce: int) -> Array:
 	return _motion_results[p_bounce]
 
 func get_last_slide_collision() -> Array:
-	if _motion_results.is_empty(): return MotionResult.cons()
+	if _motion_results.is_empty(): return _motion_result_cons()
 	return _motion_results[_motion_results.size() - 1]
 
 func _set_platform_data(p_result: Array) -> void:
-	_platform_rid = p_result[MotionResult.COLLIDER_RID]
-	_platform_object_id = p_result[MotionResult.COLLIDER_ID]
-	_platform_velocity = p_result[MotionResult.COLLIDER_VELOCITY]
+	_platform_rid = p_result[MOTION_RESULT_COLLIDER_RID]
+	_platform_object_id = p_result[MOTION_RESULT_COLLIDER_ID]
+	_platform_velocity = p_result[MOTION_RESULT_COLLIDER_VELOCITY]
 	_platform_layer = PhysicsServer2D.body_get_collision_layer(_platform_rid)
 
 func _set_collision_direction(p_result: Array) -> void:
-	if motion_mode == MOTION_MODE_GROUNDED and acos(MotionResult.get_angle(p_result, up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	if motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# floor
 		_on_floor = true
-		_floor_normal = p_result[MotionResult.COLLISION_NORMAL]
+		_floor_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		_set_platform_data(p_result)
-	elif motion_mode == MOTION_MODE_GROUNDED and acos(MotionResult.get_angle(p_result, -up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	elif motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, -up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# ceiling
 		_on_ceiling = true
 	else:
 		_on_wall = true
-		_wall_normal = p_result[MotionResult.COLLISION_NORMAL]
+		_wall_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		# Don't apply wall velocity when the collider is a CharacterBody2D.
-		if instance_from_id(p_result[MotionResult.COLLIDER_ID]) is not CharacterBody2D:
+		if instance_from_id(p_result[MOTION_RESULT_COLLIDER_ID]) is not CharacterBody2D:
 			_set_platform_data(p_result)
 
 func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Array, p_test_only: bool, p_cancel_sliding: bool) -> bool:
@@ -279,19 +310,19 @@ func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Arra
 		gt.origin += travel
 		set_global_transform(gt)
 	
-	result[MotionResult.COLLIDER] = collider
-	result[MotionResult.COLLIDER_RID] = collider_rid
-	result[MotionResult.COLLIDER_ID] = collider_id
-	result[MotionResult.COLLISION_DEPTH] = collision_depth
-	result[MotionResult.REMAINDER] = remainder
-	result[MotionResult.COLLIDER_SHAPE] = collider_shape
-	result[MotionResult.COLLIDER_VELOCITY] = collider_velocity
-	result[MotionResult.COLLISION_LOCAL_SHAPE] = collision_local_shape
-	result[MotionResult.COLLISION_NORMAL] = collision_normal
-	result[MotionResult.COLLISION_POINT] = collision_point
-	result[MotionResult.COLLISION_SAFE_FRACTION] = collision_safe_fraction
-	result[MotionResult.COLLISION_UNSAFE_FRACTION] = collision_unsafe_fraction
-	result[MotionResult.TRAVEL] = travel
+	result[MOTION_RESULT_COLLIDER] = collider
+	result[MOTION_RESULT_COLLIDER_RID] = collider_rid
+	result[MOTION_RESULT_COLLIDER_ID] = collider_id
+	result[MOTION_RESULT_COLLISION_DEPTH] = collision_depth
+	result[MOTION_RESULT_REMAINDER] = remainder
+	result[MOTION_RESULT_COLLIDER_SHAPE] = collider_shape
+	result[MOTION_RESULT_COLLIDER_VELOCITY] = collider_velocity
+	result[MOTION_RESULT_COLLISION_LOCAL_SHAPE] = collision_local_shape
+	result[MOTION_RESULT_COLLISION_NORMAL] = collision_normal
+	result[MOTION_RESULT_COLLISION_POINT] = collision_point
+	result[MOTION_RESULT_COLLISION_SAFE_FRACTION] = collision_safe_fraction
+	result[MOTION_RESULT_COLLISION_UNSAFE_FRACTION] = collision_unsafe_fraction
+	result[MOTION_RESULT_TRAVEL] = travel
 	
 	return colliding
 
@@ -309,22 +340,22 @@ func apply_floor_snap(p_wall_as_floor: bool) -> void:
 	parameters.recovery_as_collision = true  # Also report collisions generated only from recovery.
 	parameters.collide_separation_ray = true
 	
-	var result := MotionResult.cons()
+	var result := _motion_result_cons()
 	if _move_and_collide(parameters, result, true, false):
-		if (MotionResult.get_angle(result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD) or \
-		   (p_wall_as_floor and MotionResult.get_angle(result, -up_direction) > floor_max_angle + FLOOR_ANGLE_THRESHOLD):
+		if (_motion_result_get_angle(result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD) or \
+		   (p_wall_as_floor and _motion_result_get_angle(result, -up_direction) > floor_max_angle + FLOOR_ANGLE_THRESHOLD):
 			_on_floor = true
-			_floor_normal = result[MotionResult.COLLISION_NORMAL]
+			_floor_normal = result[MOTION_RESULT_COLLISION_NORMAL]
 			_set_platform_data(result)
 			
 			# Ensure that we only move the body along the up axis
-			if result[MotionResult.TRAVEL].length() > safe_margin:
-				result[MotionResult.TRAVEL] = up_direction * up_direction.dot(result[MotionResult.TRAVEL])
+			if result[MOTION_RESULT_TRAVEL].length() > safe_margin:
+				result[MOTION_RESULT_TRAVEL] = up_direction * up_direction.dot(result[MOTION_RESULT_TRAVEL])
 			else:
-				result[MotionResult.TRAVEL] = Vector2.ZERO
+				result[MOTION_RESULT_TRAVEL] = Vector2.ZERO
 			
 			var from := parameters.from
-			from.origin += result[MotionResult.TRAVEL]
+			from.origin += result[MOTION_RESULT_TRAVEL]
 			parameters.from = from
 			set_global_transform(parameters.from)
 
@@ -348,9 +379,9 @@ func _on_floor_if_snapped(p_was_on_floor: bool, p_vel_dir_facing_up: bool) -> bo
 	parameters.recovery_as_collision = true
 	parameters.collide_separation_ray = true
 	
-	var result := MotionResult.cons()
+	var result := _motion_result_cons()
 	if _move_and_collide(parameters, result, true, false):
-		if MotionResult.get_angle(result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+		if _motion_result_get_angle(result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 			return true
 	
 	return false
@@ -371,26 +402,26 @@ func _move_and_slide_floating(p_delta: float) -> void:
 		parameters.margin = safe_margin
 		parameters.recovery_as_collision = true  # Also report collisions generated only from recovery.
 		
-		var result := MotionResult.cons()
+		var result := _motion_result_cons()
 		var collided := _move_and_collide(parameters, result, false, false)
 		
-		_last_motion = result[MotionResult.TRAVEL]
+		_last_motion = result[MOTION_RESULT_TRAVEL]
 		
 		if collided:
 			_motion_results.append(result)
 			_set_collision_direction(result)
 			
-			if result[MotionResult.REMAINDER].is_zero_approx():
+			if result[MOTION_RESULT_REMAINDER].is_zero_approx():
 				motion = Vector2.ZERO  # keep same with cpp source
 				break
 			
-			if wall_min_slide_angle != 0 and MotionResult.get_angle(result, -velocity.normalized()) < wall_min_slide_angle + FLOOR_ANGLE_THRESHOLD:
+			if wall_min_slide_angle != 0 and _motion_result_get_angle(result, -velocity.normalized()) < wall_min_slide_angle + FLOOR_ANGLE_THRESHOLD:
 				motion = Vector2.ZERO
 			elif first_slide:
-				var motion_slide_norm = result[MotionResult.REMAINDER].slide(result[MotionResult.COLLISION_NORMAL]).normalized()
-				motion = motion_slide_norm * (motion.length() - result[MotionResult.TRAVEL].length())
+				var motion_slide_norm = result[MOTION_RESULT_REMAINDER].slide(result[MOTION_RESULT_COLLISION_NORMAL]).normalized()
+				motion = motion_slide_norm * (motion.length() - result[MOTION_RESULT_TRAVEL].length())
 			else:
-				motion = result[MotionResult.REMAINDER].slide(result[MotionResult.COLLISION_NORMAL])
+				motion = result[MOTION_RESULT_REMAINDER].slide(result[MOTION_RESULT_COLLISION_NORMAL])
 			
 			if motion.dot(velocity) <= 0.0:
 				motion = Vector2.ZERO
@@ -427,42 +458,42 @@ func _move_and_slide_grounded(p_delta: float, p_was_on_floor: bool) -> void:
 		
 		var prev_position := parameters.from.origin
 		
-		var result := MotionResult.cons()
+		var result := _motion_result_cons()
 		var collided := _move_and_collide(parameters, result, false, not sliding_enabled)
 		
-		_last_motion = result[MotionResult.TRAVEL]
+		_last_motion = result[MOTION_RESULT_TRAVEL]
 		
 		if collided:
 			_motion_results.append(result)
 			_set_collision_direction(result)
 			
-			if _on_ceiling and result[MotionResult.COLLIDER_VELOCITY] != Vector2.ZERO and result[MotionResult.COLLIDER_VELOCITY].dot(up_direction) < 0:
-				if not slide_on_ceiling or motion.dot(up_direction) < 0 or (result[MotionResult.COLLISION_NORMAL] + up_direction).length() < 0.01:
+			if _on_ceiling and result[MOTION_RESULT_COLLIDER_VELOCITY] != Vector2.ZERO and result[MOTION_RESULT_COLLIDER_VELOCITY].dot(up_direction) < 0:
+				if not slide_on_ceiling or motion.dot(up_direction) < 0 or (result[MOTION_RESULT_COLLISION_NORMAL] + up_direction).length() < 0.01:
 					apply_ceiling_velocity = true
-					var ceiling_vertical_velocity := up_direction * up_direction.dot(result[MotionResult.COLLIDER_VELOCITY])
+					var ceiling_vertical_velocity := up_direction * up_direction.dot(result[MOTION_RESULT_COLLIDER_VELOCITY])
 					var motion_vertical_velocity := up_direction * up_direction.dot(velocity)
 					if motion_vertical_velocity.dot(up_direction) > 0 or ceiling_vertical_velocity.length_squared() > motion_vertical_velocity.length_squared():
 						velocity = ceiling_vertical_velocity + velocity.slide(up_direction)
 			
 			if _on_floor and floor_stop_on_slope and (velocity.normalized() + up_direction).length() < 0.01:
 				var gt := get_global_transform()
-				if result[MotionResult.TRAVEL].length() <= safe_margin + CMP_EPSILON:
-					gt.origin -= result[MotionResult.TRAVEL]
+				if result[MOTION_RESULT_TRAVEL].length() <= safe_margin + CMP_EPSILON:
+					gt.origin -= result[MOTION_RESULT_TRAVEL]
 				set_global_transform(gt)
 				velocity = Vector2.ZERO
 				_last_motion = Vector2.ZERO
 				motion = Vector2.ZERO  # keep
 				break
 			
-			if result[MotionResult.REMAINDER].is_zero_approx():
+			if result[MOTION_RESULT_REMAINDER].is_zero_approx():
 				motion = Vector2.ZERO  # keep
 				break
 			
-			if floor_block_on_wall and _on_wall and motion_slide_up.dot(result[MotionResult.COLLISION_NORMAL]) <= 0:
+			if floor_block_on_wall and _on_wall and motion_slide_up.dot(result[MOTION_RESULT_COLLISION_NORMAL]) <= 0:
 				if p_was_on_floor and not _on_floor and not vel_dir_facing_up:
-					if result[MotionResult.TRAVEL].length() <= safe_margin + CMP_EPSILON:
+					if result[MOTION_RESULT_TRAVEL].length() <= safe_margin + CMP_EPSILON:
 						var gt := get_global_transform()
-						gt.origin -= result[MotionResult.TRAVEL]
+						gt.origin -= result[MOTION_RESULT_TRAVEL]
 						set_global_transform(gt)
 					_snap_on_floor(true, false, true)
 					velocity = Vector2.ZERO
@@ -470,32 +501,32 @@ func _move_and_slide_grounded(p_delta: float, p_was_on_floor: bool) -> void:
 					motion = Vector2.ZERO  # keep
 					break
 				elif not _on_floor:
-					motion = up_direction * up_direction.dot(result[MotionResult.REMAINDER])
-					motion = motion.slide(result[MotionResult.COLLISION_NORMAL])
+					motion = up_direction * up_direction.dot(result[MOTION_RESULT_REMAINDER])
+					motion = motion.slide(result[MOTION_RESULT_COLLISION_NORMAL])
 				else:
-					motion = result[MotionResult.REMAINDER]
-			elif floor_constant_speed and is_on_floor_only() and can_apply_constant_speed and p_was_on_floor and motion.dot(result[MotionResult.COLLISION_NORMAL]) < 0:
+					motion = result[MOTION_RESULT_REMAINDER]
+			elif floor_constant_speed and is_on_floor_only() and can_apply_constant_speed and p_was_on_floor and motion.dot(result[MOTION_RESULT_COLLISION_NORMAL]) < 0:
 				can_apply_constant_speed = false
-				var motion_slide_norm = result[MotionResult.REMAINDER].slide(result[MotionResult.COLLISION_NORMAL]).normalized()
-				motion = motion_slide_norm * (motion_slide_up.length() - result[MotionResult.TRAVEL].slide(up_direction).length() - last_travel.slide(up_direction).length())
+				var motion_slide_norm = result[MOTION_RESULT_REMAINDER].slide(result[MOTION_RESULT_COLLISION_NORMAL]).normalized()
+				motion = motion_slide_norm * (motion_slide_up.length() - result[MOTION_RESULT_TRAVEL].slide(up_direction).length() - last_travel.slide(up_direction).length())
 			elif (sliding_enabled or not _on_floor) and (not _on_ceiling or slide_on_ceiling or not vel_dir_facing_up) and not apply_ceiling_velocity:
-				var slide_motion = result[MotionResult.REMAINDER].slide(result[MotionResult.COLLISION_NORMAL])
+				var slide_motion = result[MOTION_RESULT_REMAINDER].slide(result[MOTION_RESULT_COLLISION_NORMAL])
 				if slide_motion.dot(velocity) > 0.0:
 					motion = slide_motion
 				else:
 					motion = Vector2.ZERO
 				if slide_on_ceiling and _on_ceiling:
 					if vel_dir_facing_up:
-						velocity = velocity.slide(result[MotionResult.COLLISION_NORMAL])
+						velocity = velocity.slide(result[MOTION_RESULT_COLLISION_NORMAL])
 					else:
 						velocity = up_direction * up_direction.dot(velocity)
 			else:
-				motion = result[MotionResult.REMAINDER]
+				motion = result[MOTION_RESULT_REMAINDER]
 				if _on_ceiling and not slide_on_ceiling and vel_dir_facing_up:
 					velocity = velocity.slide(up_direction)
 					motion = motion.slide(up_direction)
 			
-			last_travel = result[MotionResult.TRAVEL]
+			last_travel = result[MOTION_RESULT_TRAVEL]
 		elif floor_constant_speed and first_slide and _on_floor_if_snapped(p_was_on_floor, vel_dir_facing_up):
 			can_apply_constant_speed = false
 			sliding_enabled = true
@@ -516,8 +547,8 @@ func _move_and_slide_grounded(p_delta: float, p_was_on_floor: bool) -> void:
 	
 	_snap_on_floor(p_was_on_floor, vel_dir_facing_up)
 	
-	if is_on_wall_only() and motion_slide_up.dot(_motion_results[0][MotionResult.COLLISION_NORMAL]) < 0:
-		var slide_motion := velocity.slide(_motion_results[0][MotionResult.COLLISION_NORMAL])
+	if is_on_wall_only() and motion_slide_up.dot(_motion_results[0][MOTION_RESULT_COLLISION_NORMAL]) < 0:
+		var slide_motion := velocity.slide(_motion_results[0][MOTION_RESULT_COLLISION_NORMAL])
 		if motion_slide_up.dot(slide_motion) < 0:
 			velocity = up_direction * up_direction.dot(velocity)
 		else:
@@ -572,7 +603,7 @@ func move_and_slide(delta: float = -1) -> bool:
 		if _platform_object_id != 0:
 			parameters.exclude_objects = [_platform_object_id]
 		
-		var floor_result := MotionResult.cons()
+		var floor_result := _motion_result_cons()
 		if _move_and_collide(parameters, floor_result, false, false):
 			_motion_results.append(floor_result)
 			_set_collision_direction(floor_result)
