@@ -27,6 +27,10 @@ window/stretch/mode="viewport"
 
 project/assembly_name="CharBody2D"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/kinematicbody/plugin.cfg")
+
 [physics]
 
 common/physics_interpolation=true

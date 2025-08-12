@@ -326,7 +326,7 @@ func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Arra
 	
 	return colliding
 
-func apply_floor_snap(p_wall_as_floor: bool) -> void:
+func apply_floor_snap(p_wall_as_floor: bool = false) -> void:
 	if _on_floor:
 		return
 	
