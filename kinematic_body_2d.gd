@@ -249,7 +249,14 @@ func _set_collision_direction(p_result: Array) -> void:
 		_on_wall = true
 		_wall_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		# Don't apply wall velocity when the collider is a CharacterBody2D.
-		if instance_from_id(p_result[MOTION_RESULT_COLLIDER_ID]) is not CharacterBody2D:
+		
+		# NOTE: origin
+		#if instance_from_id(p_result[MOTION_RESULT_COLLIDER_ID]) is not CharacterBody2D:
+			#_set_platform_data(p_result)
+		
+		var collider = p_result[MOTION_RESULT_COLLIDER]
+		if collider is not CharacterBody2D or \
+			collider is not KinematicBody2D:
 			_set_platform_data(p_result)
 
 func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Array, p_test_only: bool, p_cancel_sliding: bool) -> bool:

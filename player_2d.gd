@@ -25,6 +25,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 
 	move_and_slide()
+	
 	# default = -1. 
 	# will use process_delta by default where delta < 0
 	# move_and_slide()

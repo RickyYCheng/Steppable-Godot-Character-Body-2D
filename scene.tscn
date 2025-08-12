@@ -37,3 +37,15 @@ texture = SubResource("GradientTexture2D_ulcgi")
 
 [node name="CharBody2D" parent="." instance=ExtResource("1_ulcgi")]
 position = Vector2(10, 196)
+motion_mode = null
+up_direction = null
+slide_on_ceiling = null
+floor_stop_on_slope = null
+floor_constant_speed = null
+floor_block_on_wall = null
+_floor_max_angle = 0.0
+floor_snap_length = null
+platform_on_leave = null
+platform_floor_layers = null
+platform_wall_layers = null
+safe_margin = null
