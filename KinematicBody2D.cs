@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Godot;
 
 //[GlobalClass]
-public partial class CharBody2D : StaticBody2D
+public partial class KinematicBody2D : StaticBody2D
 {
     public record struct MotionResult(
         Vector2 Travel, 

@@ -1,4 +1,4 @@
-class_name CharBody2D
+class_name KinematicBody2D
 extends StaticBody2D
 
 const CMP_EPSILON := 0.00001
@@ -23,18 +23,18 @@ class MotionResult:
 	func get_angle(direction: Vector2) -> float:
 		return collision_normal.dot(direction)
 
-enum MotionMode {
+enum {
 	MOTION_MODE_GROUNDED = 0,
 	MOTION_MODE_FLOATING = 1
 }
 
-enum PlatformOnLeave {
+enum {
 	PLATFORM_ON_LEAVE_ADD_VELOCITY = 0,
 	PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY = 1,
 	PLATFORM_ON_LEAVE_DO_NOTHING = 2
 }
 
-@export_enum("Grounded", "Floating") var motion_mode : int = MotionMode.MOTION_MODE_GROUNDED
+@export_enum("Grounded", "Floating") var motion_mode : int = MOTION_MODE_GROUNDED
 @export var up_direction := Vector2.UP:
 	set(v):
 		up_direction = Vector2.UP if v == Vector2.ZERO else v.normalized()
@@ -53,7 +53,7 @@ var floor_max_angle : float = deg_to_rad(45)
 var wall_min_slide_angle := deg_to_rad(15)
 
 @export_group("Moving Platform", "platform_")
-@export_enum("Add Velocity", "Add Upward Velocity", "Do Nothing") var platform_on_leave : int = PlatformOnLeave.PLATFORM_ON_LEAVE_ADD_VELOCITY
+@export_enum("Add Velocity", "Add Upward Velocity", "Do Nothing") var platform_on_leave : int = PLATFORM_ON_LEAVE_ADD_VELOCITY
 @export_flags_2d_physics var platform_floor_layers : int = -1
 @export_flags_2d_physics var platform_wall_layers : int = 0
 var _platform_layer := 0
@@ -133,12 +133,12 @@ func _set_platform_data(p_result: MotionResult) -> void:
 	_platform_layer = PhysicsServer2D.body_get_collision_layer(_platform_rid)
 
 func _set_collision_direction(p_result: MotionResult) -> void:
-	if motion_mode == MotionMode.MOTION_MODE_GROUNDED and acos(p_result.get_angle(up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	if motion_mode == MOTION_MODE_GROUNDED and acos(p_result.get_angle(up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# floor
 		_on_floor = true
 		_floor_normal = p_result.collision_normal
 		_set_platform_data(p_result)
-	elif motion_mode == MotionMode.MOTION_MODE_GROUNDED and acos(p_result.get_angle(-up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	elif motion_mode == MOTION_MODE_GROUNDED and acos(p_result.get_angle(-up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# ceiling
 		_on_ceiling = true
 	else:
@@ -504,7 +504,7 @@ func move_and_slide(delta: float = -1) -> bool:
 			_motion_results.append(floor_result)
 			_set_collision_direction(floor_result)
 	
-	if motion_mode == MotionMode.MOTION_MODE_GROUNDED:
+	if motion_mode == MOTION_MODE_GROUNDED:
 		_move_and_slide_grounded(delta, was_on_floor)
 	else:
 		_move_and_slide_floating(delta)
@@ -512,10 +512,10 @@ func move_and_slide(delta: float = -1) -> bool:
 	# Compute real velocity
 	_real_velocity = get_position_delta() / delta
 	
-	if platform_on_leave != PlatformOnLeave.PLATFORM_ON_LEAVE_DO_NOTHING:
+	if platform_on_leave != PLATFORM_ON_LEAVE_DO_NOTHING:
 		# Add last platform velocity when just left a moving platform
 		if not _on_floor and not _on_wall:
-			if platform_on_leave == PlatformOnLeave.PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY and current_platform_velocity.dot(up_direction) < 0:
+			if platform_on_leave == PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY and current_platform_velocity.dot(up_direction) < 0:
 				current_platform_velocity = current_platform_velocity.slide(up_direction)
 			velocity += current_platform_velocity
 	
