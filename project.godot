@@ -27,6 +27,10 @@ window/stretch/mode="viewport"
 
 project/assembly_name="CharBody2D"
 
+[physics]
+
+common/physics_interpolation=true
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

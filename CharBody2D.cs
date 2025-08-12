@@ -27,7 +27,8 @@ public partial class CharBody2D : StaticBody2D
         }
     }
 
-    public enum MotionModeEnum {
+    public enum MotionModeEnum 
+    {
 		Grounded,
 		Floating,
 	};
@@ -748,5 +749,46 @@ public partial class CharBody2D : StaticBody2D
     public bool IsOnCeilingOnly()
     {
         return on_ceiling && !on_floor && !on_wall;
+    }
+
+    public Vector2 GetFloorNormal()
+    {
+        return floor_normal;
+    }
+
+    public Vector2 GetLastMotion()
+    {
+        return last_motion;
+    }
+
+    public Vector2 GetPlatformVelocity()
+    {
+        return platform_velocity;
+    }
+
+    public Vector2 GetRealVelocity()
+    {
+        return real_velocity;
+    }
+
+    public Vector2 GetWallNormal()
+    {
+        return wall_normal;
+    }
+
+    public int GetSlideCollisionCount()
+    {
+        return motion_results.Count;
+    }
+
+    public MotionResult GetSlideCollision(int bounce)
+    {
+        return motion_results[bounce];
+    }
+
+    public MotionResult GetLastSlideCollision()
+    {
+        if (motion_results.Count == 0) return new();
+        return motion_results[^1];
     }
 }
