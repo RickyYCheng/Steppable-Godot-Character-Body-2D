@@ -176,9 +176,9 @@ var _real_velocity := Vector2.ZERO
 
 var _platform_rid : RID
 var _platform_object_id : int
-var _on_floor := false;
-var _on_ceiling := false;
-var _on_wall := false;
+var _on_floor := false
+var _on_ceiling := false
+var _on_wall := false
 
 var _motion_results : Array = []
 
