@@ -145,7 +145,7 @@ var physics_states : Array:
 @export var floor_constant_speed := false
 @export var floor_block_on_wall := true
 var floor_max_angle : float = deg_to_rad(45)
-@export_range(0, 180, 0.1, "suffix:°") var _floor_max_angle : float = 45.:
+@export_range(0, 180, 0.1, "suffix:°") var floor_max_angle_ : float = 45.:
 	get(): return floor_max_angle
 	set(v):
 		floor_max_angle = deg_to_rad(v)
