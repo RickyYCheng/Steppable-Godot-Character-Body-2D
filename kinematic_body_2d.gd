@@ -41,7 +41,6 @@ enum {
 
 func _serialize_motion_results(results: Array) -> Array:
 	var serialized = []
-	var buffer = StreamPeerBuffer.new()
 	for result in results:
 		var copy = result.duplicate()
 		
