@@ -5,47 +5,46 @@ const CMP_EPSILON := 0.00001
 
 func _motion_result_cons() -> Array:
 	return [
-			Vector2.ZERO,  # TRAVEL
-			Vector2.ZERO,  # REMAINDER
-			0.0,           # COLLISION_SAFE_FRACTION
-			0.0,           # COLLISION_UNSAFE_FRACTION
-			0,            # COLLIDER_SHAPE
-			0,            # COLLISION_LOCAL_SHAPE
-			null,          # COLLIDER
-			0,             # COLLIDER_ID
-			RID(),         # COLLIDER_RID
-			Vector2.ZERO,  # COLLIDER_VELOCITY
-			0.0,           # COLLISION_DEPTH
-			Vector2.ZERO,  # COLLISION_NORMAL
-			Vector2.ZERO,  # COLLISION_POINT
-		]
+		Vector2.ZERO,  # TRAVEL
+		Vector2.ZERO,  # REMAINDER
+		0.0,           # COLLISION_SAFE_FRACTION
+		0.0,           # COLLISION_UNSAFE_FRACTION
+		0,             # COLLIDER_SHAPE
+		0,             # COLLISION_LOCAL_SHAPE
+		null,          # COLLIDER
+		0,             # COLLIDER_ID
+		RID(),         # COLLIDER_RID
+		Vector2.ZERO,  # COLLIDER_VELOCITY
+		0.0,           # COLLISION_DEPTH
+		Vector2.ZERO,  # COLLISION_NORMAL
+		Vector2.ZERO,  # COLLISION_POINT
+	]
 
 func _motion_result_get_angle(motion_result: Array, direction: Vector2) -> float:
-	return acos(motion_result[MOTION_RESULT_COLLISION_NORMAL].dot(direction))
+	return motion_result[MOTION_RESULT_COLLISION_NORMAL].dot(direction)
 
 enum {
-	MOTION_RESULT_TRAVEL,                  # Vector2
-	MOTION_RESULT_REMAINDER,               # Vector2
-	MOTION_RESULT_COLLISION_SAFE_FRACTION, # float
+	MOTION_RESULT_TRAVEL,                    # Vector2
+	MOTION_RESULT_REMAINDER,                 # Vector2
+	MOTION_RESULT_COLLISION_SAFE_FRACTION,   # float
 	MOTION_RESULT_COLLISION_UNSAFE_FRACTION, # float
-	MOTION_RESULT_COLLIDER_SHAPE,          # int
-	MOTION_RESULT_COLLISION_LOCAL_SHAPE,    # int
-	MOTION_RESULT_COLLIDER,                # Object
-	MOTION_RESULT_COLLIDER_ID,             # int
-	MOTION_RESULT_COLLIDER_RID,            # RID
-	MOTION_RESULT_COLLIDER_VELOCITY,       # Vector2
-	MOTION_RESULT_COLLISION_DEPTH,         # float
-	MOTION_RESULT_COLLISION_NORMAL,        # Vector2
-	MOTION_RESULT_COLLISION_POINT,         # Vector2
+	MOTION_RESULT_COLLIDER_SHAPE,            # int
+	MOTION_RESULT_COLLISION_LOCAL_SHAPE,     # int
+	MOTION_RESULT_COLLIDER,                  # Object
+	MOTION_RESULT_COLLIDER_ID,               # int
+	MOTION_RESULT_COLLIDER_RID,              # RID
+	MOTION_RESULT_COLLIDER_VELOCITY,         # Vector2
+	MOTION_RESULT_COLLISION_DEPTH,           # float
+	MOTION_RESULT_COLLISION_NORMAL,          # Vector2
+	MOTION_RESULT_COLLISION_POINT,           # Vector2
 }
 
 func _serialize_motion_results(results: Array) -> Array:
 	var serialized = []
+	var buffer = StreamPeerBuffer.new()
 	for result in results:
-		# 创建结果的副本
 		var copy = result.duplicate()
 		
-		# 将节点引用替换为节点路径
 		var collider = copy[MOTION_RESULT_COLLIDER]
 		if collider is Node and collider != null:
 			copy[MOTION_RESULT_COLLIDER] = collider.get_path()
@@ -58,10 +57,8 @@ func _serialize_motion_results(results: Array) -> Array:
 func _deserialize_motion_results(serialized: Array) -> Array:
 	var deserialized = []
 	for result in serialized:
-		# 创建结果的副本
 		var copy = result.duplicate()
 		
-		# 将节点路径转换回节点引用
 		var collider_path = copy[MOTION_RESULT_COLLIDER]
 		if collider_path is NodePath and collider_path != NodePath():
 			copy[MOTION_RESULT_COLLIDER] = get_node_or_null(collider_path)
@@ -237,31 +234,24 @@ func _set_platform_data(p_result: Array) -> void:
 	_platform_layer = PhysicsServer2D.body_get_collision_layer(_platform_rid)
 
 func _set_collision_direction(p_result: Array) -> void:
-	if motion_mode == MOTION_MODE_GROUNDED and _motion_result_get_angle(p_result, up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	if motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# floor
 		_on_floor = true
 		_floor_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		_set_platform_data(p_result)
-	elif motion_mode == MOTION_MODE_GROUNDED and _motion_result_get_angle(p_result, -up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
+	elif motion_mode == MOTION_MODE_GROUNDED and acos(_motion_result_get_angle(p_result, -up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD:
 		# ceiling
 		_on_ceiling = true
 	else:
 		_on_wall = true
 		_wall_normal = p_result[MOTION_RESULT_COLLISION_NORMAL]
 		# Don't apply wall velocity when the collider is a CharacterBody2D.
-		
-		# NOTE: origin
-		#if instance_from_id(p_result[MOTION_RESULT_COLLIDER_ID]) is not CharacterBody2D:
-			#_set_platform_data(p_result)
-		
-		var collider = p_result[MOTION_RESULT_COLLIDER]
-		if collider is not CharacterBody2D or \
-			collider is not KinematicBody2D:
+		if instance_from_id(p_result[MOTION_RESULT_COLLIDER_ID]) is not CharacterBody2D:
 			_set_platform_data(p_result)
 
 func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Array, p_test_only: bool, p_cancel_sliding: bool) -> bool:
 	#if (is_only_update_transform_changes_enabled()):
-	#	push_error("Move functions do not work together with 'sync to physics' option. See the documentation for details.")
+		#push_error("Move functions do not work together with 'sync to physics' option. See the documentation for details.")
 	
 	var r_result := PhysicsTestMotionResult2D.new()
 	
@@ -333,7 +323,7 @@ func _move_and_collide(p_parameters: PhysicsTestMotionParameters2D, result: Arra
 	
 	return colliding
 
-func apply_floor_snap(p_wall_as_floor: bool = false) -> void:
+func apply_floor_snap(p_wall_as_floor: bool) -> void:
 	if _on_floor:
 		return
 	
