@@ -23,7 +23,7 @@ public partial class KinematicBody2D : StaticBody2D
     {
         public readonly float GetAngle(Vector2 direction)
         {
-            return CollisionNormal.Dot(direction);
+            return Mathf.Acos(CollisionNormal.Dot(direction));
         }
     }
 
@@ -71,7 +71,6 @@ public partial class KinematicBody2D : StaticBody2D
     bool on_wall = false;
 
     readonly List<MotionResult> motion_results = [];
-    readonly List<KinematicCollision2D> slide_colliders = [];
 
     const double FLOOR_ANGLE_THRESHOLD = 0.01;
 
@@ -165,13 +164,13 @@ public partial class KinematicBody2D : StaticBody2D
 
     private void SetCollisionDirection(ref MotionResult p_result)
     {
-        if (motion_mode == MotionModeEnum.Grounded && Mathf.Acos(p_result.GetAngle(up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD)
+        if (motion_mode == MotionModeEnum.Grounded && p_result.GetAngle(up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD)
         { //floor
             on_floor = true;
             floor_normal = p_result.CollisionNormal;
             SetPlatformData(ref p_result);
         }
-        else if (motion_mode == MotionModeEnum.Grounded && Mathf.Acos(p_result.GetAngle(-up_direction)) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD)
+        else if (motion_mode == MotionModeEnum.Grounded && p_result.GetAngle(-up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD)
         { //ceiling
             on_ceiling = true;
         }
