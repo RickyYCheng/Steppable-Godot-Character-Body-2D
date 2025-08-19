@@ -97,23 +97,22 @@ enum {
 
 # NOTE: states to sync for networking
 var physics_states : Array:
-	get(): 
-		return [
-			transform, 
-			velocity, 
-			_floor_normal, 
-			_platform_velocity, 
-			_wall_normal, 
-			_last_motion,
-			_previous_position,
-			_real_velocity,
-			#_platform_rid,
-			#_platform_object_id,
-			_on_floor,
-			_on_ceiling,
-			_on_wall,
-			_serialize_motion_results(_motion_results),
-		]
+	get(): return [
+		transform, 
+		velocity, 
+		_floor_normal, 
+		_platform_velocity, 
+		_wall_normal, 
+		_last_motion,
+		_previous_position,
+		_real_velocity,
+		#_platform_rid,
+		#_platform_object_id,
+		_on_floor,
+		_on_ceiling,
+		_on_wall,
+		_serialize_motion_results(_motion_results),
+	]
 	set(remote_states):
 		if remote_states.size() != physics_states.size():
 			push_error("Remote states size mismatch!")
