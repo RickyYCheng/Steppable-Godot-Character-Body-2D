@@ -114,25 +114,25 @@ var physics_states : Array:
 			_on_wall,
 			_serialize_motion_results(_motion_results),
 		]
-	set(remote_state):
-		if remote_state.size() != physics_states.size():
-			push_error("Remote state size mismatch!")
+	set(remote_states):
+		if remote_states.size() != physics_states.size():
+			push_error("Remote states size mismatch!")
 			return
 		
-		transform = remote_state[PHYSICS_STATE_TRANSFORM]
-		velocity = remote_state[PHYSICS_STATE_VELOCITY]
-		_floor_normal = remote_state[PHYSICS_STATE_FLOOR_NORMAL]
-		_platform_velocity = remote_state[PHYSICS_STATE_PLATFORM_VELOCITY]
-		_wall_normal = remote_state[PHYSICS_STATE_WALL_NORMAL]
-		_last_motion = remote_state[PHYSICS_STATE_LAST_MOTION]
-		_previous_position = remote_state[PHYSICS_STATE_PREVIOUS_POSITION]
-		_real_velocity = remote_state[PHYSICS_STATE_REAL_VELOCITY]
-		#_platform_rid = remote_state[PHYSICS_STATE_PLATFORM_RID]
-		#_platform_object_id = remote_state[PHYSICS_STATE_PLATFORM_OBJECT_ID]
-		_on_floor = remote_state[PHYSICS_STATE_ON_FLOOR]
-		_on_ceiling = remote_state[PHYSICS_STATE_ON_CEILING]
-		_on_wall = remote_state[PHYSICS_STATE_ON_WALL]
-		_motion_results = _deserialize_motion_results(remote_state[PHYSICS_STATE_MOTION_RESULTS])
+		transform = remote_states[PHYSICS_STATE_TRANSFORM]
+		velocity = remote_states[PHYSICS_STATE_VELOCITY]
+		_floor_normal = remote_states[PHYSICS_STATE_FLOOR_NORMAL]
+		_platform_velocity = remote_states[PHYSICS_STATE_PLATFORM_VELOCITY]
+		_wall_normal = remote_states[PHYSICS_STATE_WALL_NORMAL]
+		_last_motion = remote_states[PHYSICS_STATE_LAST_MOTION]
+		_previous_position = remote_states[PHYSICS_STATE_PREVIOUS_POSITION]
+		_real_velocity = remote_states[PHYSICS_STATE_REAL_VELOCITY]
+		#_platform_rid = remote_states[PHYSICS_STATE_PLATFORM_RID]
+		#_platform_object_id = remote_states[PHYSICS_STATE_PLATFORM_OBJECT_ID]
+		_on_floor = remote_states[PHYSICS_STATE_ON_FLOOR]
+		_on_ceiling = remote_states[PHYSICS_STATE_ON_CEILING]
+		_on_wall = remote_states[PHYSICS_STATE_ON_WALL]
+		_motion_results = _deserialize_motion_results(remote_states[PHYSICS_STATE_MOTION_RESULTS])
 
 @export_enum("Grounded", "Floating") var motion_mode : int = MOTION_MODE_GROUNDED
 @export var up_direction := Vector2.UP:
