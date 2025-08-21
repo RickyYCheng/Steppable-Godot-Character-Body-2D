@@ -39,34 +39,6 @@ enum {
 	MOTION_RESULT_COLLISION_POINT,           # Vector2
 }
 
-func _serialize_motion_results(results: Array) -> Array:
-	var serialized = []
-	for result in results:
-		var copy = result.duplicate()
-		
-		var collider = copy[MOTION_RESULT_COLLIDER]
-		if collider is Node and collider != null:
-			copy[MOTION_RESULT_COLLIDER] = collider.get_path()
-		else:
-			copy[MOTION_RESULT_COLLIDER] = NodePath()
-		
-		serialized.append(copy)
-	return serialized
-
-func _deserialize_motion_results(serialized: Array) -> Array:
-	var deserialized = []
-	for result in serialized:
-		var copy = result.duplicate()
-		
-		var collider_path = copy[MOTION_RESULT_COLLIDER]
-		if collider_path is NodePath and collider_path != NodePath():
-			copy[MOTION_RESULT_COLLIDER] = get_node_or_null(collider_path)
-		else:
-			copy[MOTION_RESULT_COLLIDER] = null
-		
-		deserialized.append(copy)
-	return deserialized
-
 enum {
 	MOTION_MODE_GROUNDED,
 	MOTION_MODE_FLOATING,
@@ -77,61 +49,6 @@ enum {
 	PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY,
 	PLATFORM_ON_LEAVE_DO_NOTHING,
 }
-
-enum {
-	PHYSICS_STATE_TRANSFORM,
-	PHYSICS_STATE_VELOCITY,
-	PHYSICS_STATE_FLOOR_NORMAL,
-	PHYSICS_STATE_PLATFORM_VELOCITY,
-	PHYSICS_STATE_WALL_NORMAL,
-	PHYSICS_STATE_LAST_MOTION,
-	PHYSICS_STATE_PREVIOUS_POSITION,
-	PHYSICS_STATE_REAL_VELOCITY,
-	#PHYSICS_STATE_PLATFORM_RID,
-	#PHYSICS_STATE_PLATFORM_OBJECT_ID,
-	PHYSICS_STATE_ON_FLOOR,
-	PHYSICS_STATE_ON_CEILING,
-	PHYSICS_STATE_ON_WALL,
-	PHYSICS_STATE_MOTION_RESULTS,
-}
-
-# NOTE: states to sync for networking
-var physics_states : Array:
-	get(): return [
-		transform, 
-		velocity, 
-		_floor_normal, 
-		_platform_velocity, 
-		_wall_normal, 
-		_last_motion,
-		_previous_position,
-		_real_velocity,
-		#_platform_rid,
-		#_platform_object_id,
-		_on_floor,
-		_on_ceiling,
-		_on_wall,
-		_serialize_motion_results(_motion_results),
-	]
-	set(remote_states):
-		if remote_states.size() != physics_states.size():
-			push_error("Remote states size mismatch!")
-			return
-		
-		transform = remote_states[PHYSICS_STATE_TRANSFORM]
-		velocity = remote_states[PHYSICS_STATE_VELOCITY]
-		_floor_normal = remote_states[PHYSICS_STATE_FLOOR_NORMAL]
-		_platform_velocity = remote_states[PHYSICS_STATE_PLATFORM_VELOCITY]
-		_wall_normal = remote_states[PHYSICS_STATE_WALL_NORMAL]
-		_last_motion = remote_states[PHYSICS_STATE_LAST_MOTION]
-		_previous_position = remote_states[PHYSICS_STATE_PREVIOUS_POSITION]
-		_real_velocity = remote_states[PHYSICS_STATE_REAL_VELOCITY]
-		#_platform_rid = remote_states[PHYSICS_STATE_PLATFORM_RID]
-		#_platform_object_id = remote_states[PHYSICS_STATE_PLATFORM_OBJECT_ID]
-		_on_floor = remote_states[PHYSICS_STATE_ON_FLOOR]
-		_on_ceiling = remote_states[PHYSICS_STATE_ON_CEILING]
-		_on_wall = remote_states[PHYSICS_STATE_ON_WALL]
-		_motion_results = _deserialize_motion_results(remote_states[PHYSICS_STATE_MOTION_RESULTS])
 
 @export_enum("Grounded", "Floating") var motion_mode : int = MOTION_MODE_GROUNDED
 @export var up_direction := Vector2.UP:
