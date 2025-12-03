@@ -1,5 +1,5 @@
 class_name KinematicBody2D
-extends StaticBody2D
+extends AnimatableBody2D
 
 const CMP_EPSILON := 0.00001
 
